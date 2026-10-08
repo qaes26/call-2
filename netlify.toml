@@ -1,0 +1,16 @@
+# تكوين Netlify لنشر الواجهة الأمامية لتطبيق "أبوي وأمي"
+[build]
+  publish = "public"
+  command = "echo 'Static build ready'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

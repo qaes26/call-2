@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: parents-call
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGIN
+        value: "*"
+      - key: PIN_SON
+        value: "20052006"
+      - key: PIN_FATHER
+        value: "1973"
+      - key: PIN_MOTHER
+        value: "332211"
+      - key: JWT_SECRET
+        value: super_secure_jwt_secret_parents_call_2026_xyz987654321_protect_family
+      - key: STUN_SERVER_URL
+        value: stun:stun.cloudflare.com:3478
