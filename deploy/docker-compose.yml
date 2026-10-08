@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # خادم الإشارات المحصن
+  signaling-app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: parents-call-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=production
+    networks:
+      - parents-net
+
+  # خادم Coturn المشفر لترحيل الوسائط
+  coturn:
+    image: coturn/coturn:latest
+    container_name: parents-call-coturn
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./turnserver.conf:/etc/turnserver.conf:ro
+    command: ["-c", "/etc/turnserver.conf"]
+
+networks:
+  parents-net:
+    driver: bridge

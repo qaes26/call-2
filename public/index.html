@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>أبوي وأمي - اتصال عائلي مباشر ومشفر</title>
+    <meta name="description" content="تطبيق اتصال عائلي مباشر وفائق الأمان لقيس والوالدين بتشفير كامل طرف إلى طرف WebRTC">
+    <meta name="theme-color" content="#0f172a">
+    
+    <!-- الخطوط والتنسيقات -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%2275%22 font-size=%2280%22>📞</text></svg>">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- ترويسة التطبيق -->
+        <header class="app-header">
+            <div class="brand-badge">
+                <span class="lock-icon">🔒</span>
+                <span>تشفير عائلي مغلق ومحصن (E2EE)</span>
+            </div>
+            <h1 class="app-title" id="mainAppTitle">أبوي وأمي</h1>
+            <p class="app-subtitle" id="appSubtitle">مكالمات مرئية وصوتية بلمسة واحدة</p>
+        </header>
+
+        <!-- 1. شاشة تسجيل الدخول والمصادقة بالرمز السري -->
+        <div id="authPanel" class="auth-panel">
+            <h2>تسجيل الدخول العائلي</h2>
+            <p>اختر اسمك وأدخل رمز PIN السري الخاص بك</p>
+
+            <div class="role-selector">
+                <div class="role-option selected" data-role="son" onclick="selectRole('son')">
+                    <span class="role-icon">📱</span>
+                    <span class="role-label">قيس (الابن)</span>
+                </div>
+                <div class="role-option" data-role="father" onclick="selectRole('father')">
+                    <span class="role-icon">🧔</span>
+                    <span class="role-label">أبو قيس (الأب)</span>
+                </div>
+                <div class="role-option" data-role="mother" onclick="selectRole('mother')">
+                    <span class="role-icon">🧕</span>
+                    <span class="role-label">أم قيس (الأم)</span>
+                </div>
+            </div>
+
+            <input type="password" id="pinInput" class="pin-input" placeholder="••••" maxlength="12" inputmode="numeric">
+            
+            <button id="loginBtn" class="btn-primary" onclick="handleLogin()">
+                دخول وبدء الاتصال الآمن
+            </button>
+        </div>
+
+        <!-- 2. لوحة الاتصال العائلية التفاعلية (أزرار كبيرة مخصصة) -->
+        <div id="familyCallingDashboard" class="main-calling-grid" style="display: none;">
+            <div id="familyWelcomeBanner" style="text-align: center; margin-bottom: 8px;">
+                <h2 id="currentUserGreeting" style="font-size: 1.8rem; font-weight: 800; color: #38bdf8;"></h2>
+            </div>
+            
+            <!-- يتم تعبئة أزرار الاتصال بالاثنين الآخرين برمجياً -->
+            <div id="callingCardsContainer" style="display: flex; flex-direction: column; gap: 20px;"></div>
+        </div>
+
+        <!-- تذييل الصفحة -->
+        <footer class="app-footer">
+            <div class="e2ee-guarantee">
+                <span>🛡️ حماية مشددة: DTLS/SRTP - مكالمات مشفرة ومباشرة بين الأجهزة</span>
+            </div>
+            <div style="margin-top: 10px;">
+                <button id="logoutBtn" onclick="handleLogout()" style="display: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; font-family: inherit; font-size: 0.95rem; font-weight: 700; padding: 8px 18px; border-radius: 9999px; cursor: pointer;">
+                    تبديل المستخدم أو الحساب ⚙️
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 3. شاشة الرنين للمكالمة الواردة (Incoming Call Modal) -->
+    <div id="incomingCallModal" class="incoming-overlay" style="display: none;">
+        <div class="ringing-pulse-ring">
+            <div id="incomingAvatar" class="ringing-pulse-avatar">📞</div>
+        </div>
+        <div class="ringing-title">مكالمة واردة لك الآن!</div>
+        <div id="incomingCallerName" class="ringing-caller">يتصل بك...</div>
+
+        <div class="incoming-actions">
+            <button class="btn-answer" onclick="answerCall(true)">
+                <span>رد على المكالمة</span>
+                <span>📞</span>
+            </button>
+            <button class="btn-reject" onclick="answerCall(false)">
+                <span>رفض</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. شاشة الرنين الصادر (Outgoing Call Calling Screen) -->
+    <div id="outgoingCallModal" class="incoming-overlay" style="display: none;">
+        <div class="ringing-pulse-ring" style="background: rgba(56, 189, 248, 0.2); animation: ringPulse 2s infinite;">
+            <div id="outgoingAvatar" class="ringing-pulse-avatar" style="background: #0284c7;">📱</div>
+        </div>
+        <div class="ringing-title">جاري الاتصال...</div>
+        <div id="outgoingTargetName" class="ringing-caller" style="color: #38bdf8;">اتصال...</div>
+
+        <div class="incoming-actions" style="max-width: 260px;">
+            <button class="btn-reject" style="width: 100%;" onclick="cancelOutgoingCall()">
+                <span>إلغاء الاتصال</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 5. شاشة المكالمة الجارية بالصوت والصورة (Active Video Screen) -->
+    <div id="activeCallScreen" class="call-active-screen" style="display: none;">
+        <div class="video-container">
+            <!-- الفيديو البعيد (الطرف الآخر) -->
+            <video id="remoteVideo" autoplay playsinline></video>
+            
+            <!-- المعاينة المحلية للطرف المتصل -->
+            <video id="localVideo" autoplay playsinline muted></video>
+
+            <!-- شريط الأمان العلوي -->
+            <div class="call-top-bar">
+                <div class="security-tag" id="securityAuditBadge">
+                    <span>🔒</span>
+                    <span id="securityAuditText">مشفر بطبقة DTLS-SRTP</span>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم السفلية الضخمة -->
+            <div class="call-controls-bar">
+                <!-- زر كتم الصوت -->
+                <button id="muteAudioBtn" class="control-btn" onclick="toggleMuteAudio()" title="كتم الصوت">
+                    <span id="muteAudioIcon">🎤</span>
+                </button>
+
+                <!-- زر إنهاء المكالمة الضخم -->
+                <button class="btn-end-call" onclick="endCurrentCall()" title="إنهاء المكالمة">
+                    <span>📞</span>
+                </button>
+
+                <!-- زر إيقاف الكاميرا -->
+                <button id="toggleVideoBtn" class="control-btn" onclick="toggleVideoCamera()" title="إيقاف الكاميرا">
+                    <span id="toggleVideoIcon">📹</span>
+                </button>
+
+                <!-- زر تبديل الكاميرا (للهواتف) -->
+                <button id="switchCameraBtn" class="control-btn" onclick="switchCameraFacing()" title="تبديل الكاميرا">
+                    <span>🔄</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مكتبات التطبيق -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/audio-fx.js"></script>
+    <script src="js/webrtc.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
